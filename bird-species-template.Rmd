@@ -1,7 +1,7 @@
 ---
 title: "Activity: Bird Species"
-author: "Your Names Here"
-date: "DUE DATE "
+author: "Sangeeta Iyer"
+date: "7/24/24"
 output: html_notebook
 ---
 
@@ -10,17 +10,22 @@ output: html_notebook
 
 ```{r}
 # Load `tidyverse` and `dcData` packages
-
-
-
+library("tidyverse")
+library("dcData")
 
 # Load the `OrdwayBirds` data set into your RStudio environment from the `dcData` package
-
-
+data("OrdwayBirds", package = "dcData")
 
 
 # Show a few commands used to inspect the data set a few different ways
+## Summary of data
+summary(OrdwayBirds)
 
+## Structure of data
+str(OrdwayBirds)
+
+## Sample rows of data
+head(OrdwayBirds)
 
 
 ```
@@ -36,10 +41,21 @@ Before we begin, the book gives us some instructions to select a few key variabl
 ```{r}
 # Get the data table & clean up dates (see Data Computing eBook)
 
-
+uniqueBirdData <- OrdwayBirds %>%
+  select(SpeciesName, Month, Day) %>%
+  mutate(Month = as.numeric(as.character(Month)),
+         Day = as.numeric(as.character(Day)))
 
 # Inspect resulting data
 
+## Summary of data
+summary(uniqueBirdData)
+
+## Structure of data
+str(uniqueBirdData)
+
+## Sample rows of data
+head(uniqueBirdData)
 
 ```
 
@@ -53,11 +69,11 @@ Before we begin, the book gives us some instructions to select a few key variabl
 ```{r}
 # unique species in original data (including mis-spellings)
 
-
+n_distinct(uniqueBirdData$SpeciesName)
 
 # unique species in the clean list
 
-
+n_distinct((OrdwaySpeciesNames$SpeciesNameCleaned))
 
 ```
 
@@ -69,16 +85,34 @@ Before we begin, the book gives us some instructions to select a few key variabl
 
 ```{r}
 # inspect OrdwaySpeciesNames
+## Summary of data
+summary( OrdwaySpeciesNames)
 
+## Structure of data
+str( OrdwaySpeciesNames)
+
+## Sample rows of data
+head( OrdwaySpeciesNames)
 
 # inner join
-
+Corrected <-
+  uniqueBirdData %>%
+  inner_join( OrdwaySpeciesNames ) %>% 
+  select( Species = SpeciesNameCleaned, Month, Day ) %>%
+  na.omit()
 
 
 
 # inspect the data after the join
 
+## Summary of data
+summary(Corrected)
 
+## Structure of data
+str(Corrected)
+
+## Sample rows of data
+head(Corrected)
 ```
 
 
@@ -88,18 +122,26 @@ We want to identify the top 5-6 bird species sighted at the Katherine Ordway Nat
 
 ```{r}
 # count sightings by species in descending order
-
-
-
+Corrected %>%
+  group_by(Species) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count))
 
 # a hint in the text book recommends displaying the top 10 species to choose our threshold
 
-
-
 # define a sightings threshold; produce a table with only birds belonging to major species
+AggregatedBirdCount <- Corrected %>%
+  group_by(Species) %>%
+  summarize(count = n())
 
+topTen <- AggregatedBirdCount %>%
+  filter(count >= 460)
+  
+Majors <- filter(Corrected, Species %in% topTen$Species)
 
-
+Majors %>%
+  group_by(Species) %>%
+  summarize(count = n())
 
 ```
 
@@ -111,7 +153,12 @@ We now want to produce a month-by-month count for each of the major species, and
 ```{r}
 # prepare glyph-ready data table called `ByMonth`
 
+ByMonth <- Majors %>%
+  group_by(Species, Month) %>% 
+  summarise(count = n())
 
+ByMonth %>%
+  arrange(desc(Month))
 
 ```
 
@@ -124,34 +171,39 @@ Now use the ggplot template below to generate the desired graph. (Remark you can
 
 ByMonth %>% 
   ggplot(aes(x = Month, y = count, color = Species)) + 
-  geom_line()
+  geom_line(size = 1, alpha = 0.5, aes(color = Species))
 
 ByMonth %>% ggplot(aes(x=Month,y=count ,fill=Species)) +
   geom_bar(stat='identity',position='stack', width=.9) 
+
 
 ```
 
 According to the graph, we can answer the questions posed:
 
 ##### 1. Which species are present year-round?  
-
+American Goldfish and Black-capped chickadee, 
 
 
 ##### 2. Which species are migratory, that is, primarily present in one or two seasons?
-
-
+House wren and Lincoln's sparrow
 
 
 ##### 3. What is the peak month for each major species? (bullet list)
-
-
-
+- American Goldfish: 10
+- black capped chickadee: 11
+- catbird: 5
+- field sparrow: 5
+- house wren : 7
+- licoln's sparrow: 10
+- robin: 5
+- slate colored junco: 10
+- song sparrow: 4
+- tree swallow: 3
 
 ##### 4. Which major species are seen in good numbers for at least 6 months of the year?
-
-
+"good numbers" is vague; all bird species are in the ByMonths dataset for at least 6 months. If we define "good numbers" as <=20, then the list is as follows: American Goldfish, Black capped chickadee, field sparrow, robin, slate colored junco, song sparrow, and tree swallow
 
 ```{r}
 
 ```
-
